@@ -1,0 +1,38 @@
+Table: Activity
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| player_id    | int     |
+| device_id    | int     |
+| event_date   | date    |
+| games_played | int     |
++--------------+---------+
+(player_id, event_date) is the primary key (combination of columns with unique values) of this table.
+This table shows the activity of players of some games.
+Each row is a record of a player who logged in and played a number of games (possibly 0) before logging out on someday using some device.
+
+ 
+
+Write a solution to report the fraction of players that logged in again on the day after the day they first logged in, rounded to 2 decimal places. In other words, you need to count the number of players that logged in for at least two consecutive days starting from their first login date, then divide that number by the total number of players.
+
+# Write your MySQL query statement below
+-- select round(count(distinct player_id)/(select count(distinct player_id) from activity),2) as fraction from activity where date_add(event_date,interval 1 day) in (select event_date from activity)
+
+-- select round(count(distinct activity.player_id)/(select count(distinct player_id) from activity),2) as fraction
+-- from activity
+-- join
+-- (select player_id, date_sub(event_date, interval 1 day) as new_date from activity) as T
+-- on activity.player_id=T.player_id and activity.event_date=T.new_date
+
+with nt as (
+    select player_id, min(event_date) as first_day from activity group by player_id
+), ot as (
+    select first_day, S.* from nt
+    inner join
+    (select * from activity) as S
+    on nt.first_day=date_sub(S.event_date, interval 1 day) and nt.player_id=S.player_id
+    )
+
+select round(count(distinct player_id)/(select count(distinct player_id) from activity),2) as fraction
+from ot
